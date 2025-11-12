@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeatherCast — Simple Weather App</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1: #0f172a; /* dark navy */
+      --bg2: #0b3d91; /* deep blue */
+      --card: rgba(255,255,255,0.06);
+      --glass: rgba(255,255,255,0.06);
+      --accent: #60a5fa;
+      --accent-2: #7dd3fc;
+      --text: #e6eef8;
+      --muted: #9fb3d6;
+      --success: #34d399;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(96,165,250,0.08), transparent),
+                  linear-gradient(180deg,var(--bg1), var(--bg2));
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:36px;
+    }
+
+    .Container{
+      width:100%;
+      max-width:980px;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:28px;
+      align-items:start;
+    }
+
+    .HeroCard{
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      border-radius:18px;
+      padding:28px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+      border:1px solid rgba(255,255,255,0.04);
+    }
+
+    header.Header{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+    .Logo{
+      width:56px;height:56px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      box-shadow: 0 6px 18px rgba(12,36,110,0.35);
+      font-weight:700;color:#063c6b;font-size:20px
+    }
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .SearchBox{display:flex;gap:12px;margin-top:18px}
+    input.Input{
+      flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);
+      outline:none;font-size:15px;box-shadow: inset 0 -1px 0 rgba(255,255,255,0.01);
+    }
+    button.ButtonPrimary{
+      background:linear-gradient(180deg,var(--accent),var(--accent-2));border:none;padding:10px 14px;border-radius:12px;color:#042a4d;font-weight:700;cursor:pointer;
+      box-shadow: 0 8px 20px rgba(96,165,250,0.12);
+    }
+    .ButtonPrimary:active{transform:translateY(1px)}
+
+    /* Right column card */
+    .WeatherPanel{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:18px;padding:20px;border:1px solid rgba(255,255,255,0.03);
+      display:flex;flex-direction:column;gap:12px;align-items:center;
+      min-height:260px;justify-content:center
+    }
+
+    .TempBig{font-size:64px;font-weight:700;line-height:1;color:var(--text)}
+    .Condition{display:flex;gap:12px;align-items:center}
+    .Condition img{width:64px;height:64px}
+    .SmallMuted{color:var(--muted);font-size:13px}
+
+    .MetaGrid{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+    .MetaItem{background:rgba(255,255,255,0.02);padding:10px 12px;border-radius:10px;font-size:13px;color:var(--muted);min-width:120px;text-align:center}
+
+    .WeatherFooter{display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--muted);font-size:13px}
+
+    /* Animations */
+    .pulse{animation:pulse 4s linear infinite}
+    @keyframes pulse{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)} }
+
+    /* Empty state */
+    .EmptyState{display:grid;place-items:center;padding:36px;border-radius:12px;border:1px dashed rgba(255,255,255,0.03);color:var(--muted)}
+
+    /* Responsive */
+    @media (max-width:880px){
+      .Container{grid-template-columns:1fr;}
+      .WeatherPanel{order:-1}
+    }
+
+    footer.Note{margin-top:12px;color:var(--muted);font-size:12px}
+
+    .ToggleCF{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.02);padding:6px;border-radius:999px;border:1px solid rgba(255,255,255,0.03)}
+    .ToggleCF button{background:transparent;border:none;color:var(--muted);padding:6px 10px;border-radius:999px;cursor:pointer}
+    .ToggleCF button.active{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#032042;font-weight:700}
+
+    .Error{color:#ffd1d1;background:rgba(255,200,200,0.04);padding:8px;border-radius:8px;border:1px solid rgba(255,200,200,0.06);font-size:13px}
+
+  </style>
+</head>
+<body>
+  <div class="Container">
+    <section class="HeroCard">
+      <header class="Header">
+        <div class="Logo">WC</div>
+        <div>
+          <h1>WeatherCast</h1>
+          <p class="lead">Quick, beautiful weather for any city — powered by WeatherAPI.</p>
+        </div>
+      </header>
+
+      <div>
+        <div class="SearchBox">
+          <input class="Input" id="locationInput" placeholder="Enter city name or zip (e.g. London, Tokyo, 10001)" autofocus />
+          <button class="ButtonPrimary" id="searchBtn">Search</button>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+          <div class="SmallMuted">Include air quality data automatically.</div>
+          <div class="ToggleCF" title="Toggle Celsius / Fahrenheit">
+            <button id="cBtn" class="active">°C</button>
+            <button id="fBtn">°F</button>
+          </div>
+        </div>
+
+        <div id="message" style="margin-top:14px"></div>
+
+        <div style="margin-top:18px">
+          <div class="EmptyState" id="empty">Search a location to see current weather</div>
+          <div id="result" style="display:none">
+            <!-- Left summary inside hero area -->
+            <div style="display:flex;gap:16px;align-items:center">
+              <div style="flex:1">
+                <h2 id="place" style="margin:0;font-size:20px"></h2>
+                <div id="localtime" class="SmallMuted" style="margin-top:6px"></div>
+
+                <p id="conditionText" style="margin:12px 0 0 0;font-size:16px;color:var(--text)"></p>
+
+                <div class="MetaGrid" id="leftMeta" style="margin-top:12px"></div>
+              </div>
+              <div style="width:120px;display:flex;flex-direction:column;align-items:center;gap:8px">
+                <div id="iconWrap" style="width:96px;height:96px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);">
+                  <img id="conditionIcon" src="" alt="icon" style="width:72px;height:72px" />
+                </div>
+                <div class="SmallMuted" id="windDir"></div>
+              </div>
+            </div>
+
+            <footer class="Note">Tip: For production move your API key to a server — exposing API keys on the client isn't secure.</footer>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="WeatherPanel HeroCard">
+      <div id="panelEmpty" class="EmptyState">No weather loaded</div>
+
+      <div id="panelResult" style="display:none;align-items:center">
+        <div class="Condition">
+          <img id="panelIcon" src="" alt="icon" />
+          <div>
+            <div class="TempBig" id="tempBig">--°</div>
+            <div class="SmallMuted" id="feelsLike">Feels like —</div>
+          </div>
+        </div>
+
+        <div class="MetaGrid" style="margin-top:14px;width:100%;justify-content:center">
+          <div class="MetaItem" id="humidity">Humidity<br><strong style="color:var(--text);font-size:16px">--%</strong></div>
+          <div class="MetaItem" id="wind">Wind<br><strong style="color:var(--text);font-size:16px">-- kph</strong></div>
+          <div class="MetaItem" id="pressure">Pressure<br><strong style="color:var(--text);font-size:16px">-- mb</strong></div>
+        </div>
+
+        <div class="WeatherFooter" style="margin-top:18px">
+          <div id="aqiText">Air Quality: —</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // ============ CONFIG ============
+    // You provided this API key and sample URL in your message. It is embedded here
+    const API_KEY = '9d65972c633c484784c143840251809';
+    const BASE_URL = 'https://api.weatherapi.com/v1/current.json';
+
+    // Helper: select
+    const $ = (s) => document.querySelector(s);
+
+    const locationInput = $('#locationInput');
+    const searchBtn = $('#searchBtn');
+    const message = $('#message');
+    const empty = $('#empty');
+    const result = $('#result');
+
+    const placeEl = $('#place');
+    const localtimeEl = $('#localtime');
+    const conditionText = $('#conditionText');
+    const conditionIcon = $('#conditionIcon');
+    const leftMeta = $('#leftMeta');
+    const windDir = $('#windDir');
+
+    const panelEmpty = $('#panelEmpty');
+    const panelResult = $('#panelResult');
+    const tempBig = $('#tempBig');
+    const feelsLike = $('#feelsLike');
+    const panelIcon = $('#panelIcon');
+    const humidity = $('#humidity');
+    const wind = $('#wind');
+    const pressure = $('#pressure');
+    const aqiText = $('#aqiText');
+
+    const cBtn = $('#cBtn');
+    const fBtn = $('#fBtn');
+
+    let unit = 'C'; // default
+
+    function setMessage(html, isError){
+      message.innerHTML = html ? `<div class="${isError? 'Error':''}">${html}</div>` : '';
+    }
+
+    function showLoadingState(){
+      setMessage('Loading…');
+      empty.style.display = 'none';
+      result.style.display = 'none';
+      panelEmpty.style.display = 'none';
+      panelResult.style.display = 'none';
+    }
+
+    function showEmpty(){
+      empty.style.display = '';
+      result.style.display = 'none';
+      panelEmpty.style.display = '';
+      panelResult.style.display = 'none';
+      setMessage('');
+    }
+
+    function renderData(data){
+      setMessage('');
+      // Location & meta
+      placeEl.textContent = `${data.location.name}, ${data.location.country}`;
+      localtimeEl.textContent = `Local time: ${data.location.localtime}`;
+      conditionText.textContent = data.current.condition.text;
+      conditionIcon.src = 'https:' + data.current.condition.icon;
+      windDir.textContent = `${data.current.wind_dir} • ${data.current.wind_kph} kph`;
+
+      leftMeta.innerHTML = `
+        <div class="MetaItem">Temp (C)<br><strong style="color:var(--text);font-size:16px">${data.current.temp_c}°C</strong></div>
+        <div class="MetaItem">Temp (F)<br><strong style="color:var(--text);font-size:16px">${data.current.temp_f}°F</strong></div>
+        <div class="MetaItem">Visibility<br><strong style="color:var(--text);font-size:16px">${data.current.vis_km} km</strong></div>
+      `;
+
+      // Panel
+      panelIcon.src = 'https:' + data.current.condition.icon;
+      if(unit === 'C'){
+        tempBig.textContent = Math.round(data.current.temp_c) + '°C';
+        feelsLike.textContent = `Feels like ${Math.round(data.current.feelslike_c)}°C`;
+      } else {
+        tempBig.textContent = Math.round(data.current.temp_f) + '°F';
+        feelsLike.textContent = `Feels like ${Math.round(data.current.feelslike_f)}°F`;
+      }
+
+      humidity.innerHTML = `Humidity<br><strong style="color:var(--text);font-size:16px">${data.current.humidity}%</strong>`;
+      wind.innerHTML = `Wind<br><strong style="color:var(--text);font-size:16px">${data.current.wind_kph} kph</strong>`;
+      pressure.innerHTML = `Pressure<br><strong style="color:var(--text);font-size:16px">${data.current.pressure_mb} mb</strong>`;
+
+      if(data.current.air_quality){
+        // WeatherAPI returns components and an 'us-epa-index' in many responses
+        const aq = data.current.air_quality['us-epa-index'];
+        aqiText.textContent = `Air Quality Index (US EPA): ${aq}`;
+      } else {
+        aqiText.textContent = 'Air Quality: Not available';
+      }
+
+      empty.style.display = 'none';
+      result.style.display = '';
+      panelEmpty.style.display = 'none';
+      panelResult.style.display = '';
+    }
+
+    async function fetchWeather(query){
+      try{
+        showLoadingState();
+        const url = `${BASE_URL}?key=${encodeURIComponent(API_KEY)}&q=${encodeURIComponent(query)}&aqi=yes`;
+        const resp = await fetch(url);
+        if(!resp.ok){
+          const txt = await resp.text();
+          throw new Error(`API error: ${resp.status} ${resp.statusText} — ${txt}`);
+        }
+        const data = await resp.json();
+        if(data && data.location){
+          renderData(data);
+        } else {
+          throw new Error('No weather data returned');
+        }
+      }catch(err){
+        console.error(err);
+        setMessage('Could not fetch weather. ' + (err.message||''), true);
+        showEmpty();
+      }
+    }
+
+    // Event handlers
+    searchBtn.addEventListener('click', ()=>{
+      const q = locationInput.value.trim();
+      if(!q){ setMessage('Please enter a location', true); return; }
+      fetchWeather(q);
+    });
+
+    locationInput.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') searchBtn.click();
+    });
+
+    cBtn.addEventListener('click', ()=>{unit='C'; cBtn.classList.add('active'); fBtn.classList.remove('active');
+      // update temp on open data if visible
+      if(panelResult.style.display !== 'none'){
+        const tStr = tempBig.textContent.replace(/[°CF]/g,'');
+        // simply re-fetch last location to be safe
+        const q = placeEl.textContent.split(',')[0]; if(q) fetchWeather(q);
+      }
+    });
+
+    fBtn.addEventListener('click', ()=>{unit='F'; fBtn.classList.add('active'); cBtn.classList.remove('active');
+      if(panelResult.style.display !== 'none'){
+        const q = placeEl.textContent.split(',')[0]; if(q) fetchWeather(q);
+      }
+    });
+
+    // On load: you can optionally try a default city
+    // fetchWeather('London');
+
+  </script>
+</body>
+</html>
